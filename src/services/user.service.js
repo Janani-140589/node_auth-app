@@ -1,5 +1,4 @@
 const { User } = require('../models/model').model;
-const { where } = require('sequelize');
 const emailService = require('./email.Service');
 const bcrypt = require('bcryptjs');
 
@@ -20,7 +19,7 @@ const updateName = async (userData) => {
 
 const updateEmail = async (userData) => {
   const user = await User.findOne({ where: { email: userData.email } });
-  console.log(userData.id, userData.email, userData.newEmail);
+
   const verifyPassword = await bcrypt.compare(userData.password, user.password);
 
   if (verifyPassword) {
@@ -28,13 +27,14 @@ const updateEmail = async (userData) => {
       const [updatedRows, updatedUser] = await User.update(
         { email: userData.newEmail },
         {
-          where: {            
+          where: {
             id: userData.id,
             email: userData.email,
           },
           returning: true,
         },
       );
+
       if (updatedRows) {
         const mailContent = {
           from: 'tech.rj.1405@gmail.com',
@@ -45,18 +45,18 @@ const updateEmail = async (userData) => {
           <p>Your email ID has been changed from ${userData.email} to ${updatedUser[0].email}</p>
         `,
         };
-  
+
         try {
           await emailService.sendMail(mailContent);
-  
+
           return { success: true, message: 'Email has been changed' };
         } catch (err) {
           return { success: false, message: err };
-         }  
+        }
       }
     } catch (err) {
-          return { success: false, message: err };
-    }          
+      return { success: false, message: err };
+    }
   } else {
     return { success: false, message: 'Invalid Password' };
   }
@@ -65,31 +65,50 @@ const updateEmail = async (userData) => {
 const updatePassword = async (userData) => {
   const user = await User.findOne({ where: { email: userData.email } });
 
-  const validateOldPassword = await bcrypt.compare(userData.oldPassword, user.password);
+  const validateOldPassword = await bcrypt.compare(
+    userData.oldPassword,
+    user.password,
+  );
 
   if (!validateOldPassword) {
-    return { success: false, code :401 ,message: 'Invalid credetials' };
+    return { success: false, code: 401, message: 'Invalid credetials' };
   }
-  
+
   if (userData.oldPassword === userData.newPassword) {
-    return { success: false, code :404 ,message: 'Old and New passoword cannot be same' };
+    return {
+      success: false,
+      code: 404,
+      message: 'Old and New passoword cannot be same',
+    };
   }
+
   const hashNewPassword = await bcrypt.hash(userData.newPassword, 10);
-  const [updatedrows, updatedUser] = await User.update({ password: hashNewPassword },
+  const [updatedrows, updatedUser] = await User.update(
+    { password: hashNewPassword },
     {
       where: {
         email: user.email,
         id: user.id,
       },
       returning: true,
-    }
+    },
   );
+
   if (!updatedrows) {
-    return { success: false, code:404 , message: 'Unable to update new password' };
+    return {
+      success: false,
+      code: 404,
+      message: 'Unable to update new password',
+    };
   }
 
-  return { success: true, code : 200 , message: 'Password change successful !!', user: updatedUser[0] };
-}
+  return {
+    success: true,
+    code: 200,
+    message: 'Password change successful !!',
+    user: updatedUser[0],
+  };
+};
 
 const userService = { updateName, updateEmail, updatePassword };
 

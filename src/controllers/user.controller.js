@@ -29,7 +29,7 @@ const nameChange = async (req, res) => {
 
 const changeEmail = async (req, res) => {
   const { password, newEmail } = req.body;
-  
+
   const email = req.user.email;
   const id = Number(req.user.userId);
   const validateNewMail = validator.isEmail(newEmail);
@@ -37,7 +37,6 @@ const changeEmail = async (req, res) => {
   if (!validateNewMail) {
     return res.status(404).json({ message: 'Enter valid email to change' });
   }
-  console.log(id, email, password, newEmail);
 
   const updatedEmail = await userService.updateEmail({
     id,
@@ -58,20 +57,36 @@ const changePassword = async (req, res) => {
   const newPassword = req.body.newPassword;
   const confirmPassword = req.body.confirmPassword;
   const email = req.user.email;
-  
+
   if (newPassword !== confirmPassword) {
-    return res.status(400).json({ message: 'Confirmation password is different.' });
+    return res
+      .status(400)
+      .json({ message: 'Confirmation password is different.' });
   }
 
-  const updatedPassword = await userService.updatePassword({ email, oldPassword, newPassword, confirmPassword });
+  const updatedPassword = await userService.updatePassword({
+    email,
+    oldPassword,
+    newPassword,
+    confirmPassword,
+  });
 
   if (updatedPassword.success) {
-    return res.status(updatedPassword.code).json({ message : updatedPassword.message,user: updatedPassword.user });
+    return res
+      .status(updatedPassword.code)
+      .json({ message: updatedPassword.message, user: updatedPassword.user });
   } else {
-    return res.status(updatedPassword.code).json({ message: updatedPassword.message });
+    return res
+      .status(updatedPassword.code)
+      .json({ message: updatedPassword.message });
   }
-}
+};
 
-const userController = { profilePage, nameChange, changeEmail, changePassword };
+const userController = {
+  profilePage,
+  nameChange,
+  changeEmail,
+  changePassword,
+};
 
 module.exports = userController;

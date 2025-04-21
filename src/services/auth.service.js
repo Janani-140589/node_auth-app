@@ -1,12 +1,8 @@
 const bcrypt = require('bcryptjs');
 
-
 const { User, PasswordReset } = require('../models/model').model;
 const emailService = require('./email.Service');
-const { use } = require('../routes/user.route');
-const { where } = require('sequelize');
 const passwordReset = require('../models/passwordreset.model');
-
 
 const isuserAlreadyExists = async (email) => {
   const user = await User.findOne({ where: { email } });
@@ -83,9 +79,9 @@ const verifyCredentials = async (email, password) => {
   return { success: true, code: 200, user: userData };
 };
 
-const triggerResetPassword = async (userData) => { 
-  console.log(userData);
+const triggerResetPassword = async (userData) => {
   const tokenExpiresAt = new Date();
+
   tokenExpiresAt.setHours(tokenExpiresAt.getHours() + 1);
 
   const pwdReset = await PasswordReset.create({
@@ -95,11 +91,15 @@ const triggerResetPassword = async (userData) => {
   });
 
   if (!pwdReset) {
-    return { success: false, code: 400, message: 'Unable to proceed with password reset process !' };
+    return {
+      success: false,
+      code: 400,
+      message: 'Unable to proceed with password reset process !',
+    };
   }
 
   const resetLink = `http:/localhost:5700/auth/reset/${userData.token}`;
-  console.log(resetLink);
+
   const mailContent = {
     from: 'tech.rj.1405@gmail.com',
     to: userData.email,
@@ -113,6 +113,7 @@ const triggerResetPassword = async (userData) => {
 
   try {
     await emailService.sendMail(mailContent);
+
     return {
       success: true,
       code: 200,
@@ -121,39 +122,50 @@ const triggerResetPassword = async (userData) => {
   } catch (err) {
     return { success: false, code: 500, message: 'Unable to trigger Email' };
   }
-  
-}
+};
 
-const getPasswordResetData = async (email,token) => {
-  const passwordResetLink = await PasswordReset.findOne({ where: { email,reset_token: token } });
+const getPasswordResetData = async (email, token) => {
+  const passwordResetLink = await PasswordReset.findOne({
+    where: { email, reset_token: token },
+  });
+
   return passwordResetLink;
-}
+};
 
 const updatePassword = async (userData) => {
+  const hashNewPassword = await bcrypt
+    .hash(userData.newPassword, 10)
+    .then((hashedPassword) => {
+      return hashedPassword;
+    });
 
-  const hashNewPassword = await bcrypt.hash(userData.newPassword, 10)
-    .then(hashedPassword => { return hashedPassword });
-  
-  console.log(userData, hashNewPassword);
-  
-    const [updatedRows, updatedUser] = await User.update({ password: hashNewPassword },
-      {
-        where: {
-          email : userData.email,
-          id : userData.id,
-        },
-        returning : true,
-      }
-    );
-    console.log(updatedRows, updatedUser[0]);
-    if (updatedRows) {
-      await passwordReset.destroy({ where: { reset_token: userData.token } });
-      return { success: true, code: 200, message: 'Password Reset Successful '+ updatedUser[0] };
-    } else {
-      return { success: false, code: 404, message: 'Unable to update password. Try again later' };
-    }
-    
-}
+  const [updatedRows, updatedUser] = await User.update(
+    { password: hashNewPassword },
+    {
+      where: {
+        email: userData.email,
+        id: userData.id,
+      },
+      returning: true,
+    },
+  );
+
+  if (updatedRows) {
+    await passwordReset.destroy({ where: { reset_token: userData.token } });
+
+    return {
+      success: true,
+      code: 200,
+      message: 'Password Reset Successful ' + updatedUser[0],
+    };
+  } else {
+    return {
+      success: false,
+      code: 404,
+      message: 'Unable to update password. Try again later',
+    };
+  }
+};
 
 const authService = {
   isuserAlreadyExists,
@@ -163,9 +175,6 @@ const authService = {
   triggerResetPassword,
   updatePassword,
   getPasswordResetData,
-
 };
-
-
 
 module.exports = authService;

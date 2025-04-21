@@ -1,7 +1,6 @@
 const authService = require('../services/auth.service');
 const validator = require('validator');
 const authmiddleware = require('../middlewares/auth.middleware');
-const userService = require('../services/user.service');
 
 const registration = async (req, res) => {
   const { name, email, password } = req.body;
@@ -107,7 +106,6 @@ const loginUser = async (req, res) => {
 };
 
 const triggertResetPasswordLink = async (req, res) => {
-  
   const user = await authService.isuserAlreadyExists(req.body.email);
 
   if (!user) {
@@ -116,65 +114,93 @@ const triggertResetPasswordLink = async (req, res) => {
 
   const activationToken = authmiddleware.generateJwtToken(user.email, user.id);
 
-  const triggerResetLink =await authService.triggerResetPassword({ email: user.email, token: activationToken });
-  
+  const triggerResetLink = await authService.triggerResetPassword({
+    email: user.email,
+    token: activationToken,
+  });
+
   if (triggerResetLink) {
-    return res.status(triggerResetLink.code).json({ message: triggerResetLink.message });
-   }
+    return res
+      .status(triggerResetLink.code)
+      .json({ message: triggerResetLink.message });
+  }
 };
 
 const resetPassword = async (req, res) => {
   const resetToken = req.params.token;
   const { newPassword, confirmPassword } = req.body;
-  
-  console.log('Passwords:', newPassword, confirmPassword);
+
   let decodedToken;
+
   try {
     decodedToken = authmiddleware.verifyJwtToken(resetToken);
-    console.log('Decoded Token', decodedToken);
   } catch (err) {
-    return res.status(401).json({ message: 'Token Expired. Please reset again', error : err });
+    return res
+      .status(401)
+      .json({ message: 'Token Expired. Please reset again', error: err });
   }
-    const getPwdLink = await authService.getPasswordResetData(decodedToken.email,resetToken);
 
-    if (!getPwdLink) {
-      return res.status(401).json({ message: 'Password Reset Data not found' });
-    }
+  const getPwdLink = await authService.getPasswordResetData(
+    decodedToken.email,
+    resetToken,
+  );
 
-    if (decodedToken.expiresAt < new Date() && getPwdLink.expiresAt < new Date()) {
-      return res.status(401).json({ message: 'Password Reset Link expired.' });
-    }
+  if (!getPwdLink) {
+    return res.status(401).json({ message: 'Password Reset Data not found' });
+  }
 
-    const isValidPassword = validator.isStrongPassword(newPassword, {
-      minLength: 8,
-      minNumbers: 1,
-      minLowercase: 1,
-      minUppercase: 1,
-      minSymbols: 1,
-    });
+  if (
+    decodedToken.expiresAt < new Date() &&
+    getPwdLink.expiresAt < new Date()
+  ) {
+    return res.status(401).json({ message: 'Password Reset Link expired.' });
+  }
 
-    if (!isValidPassword) {
-      return res.status(400).json({ message: 'Password did not meet the minimum criteria' });
-    }
+  const isValidPassword = validator.isStrongPassword(newPassword, {
+    minLength: 8,
+    minNumbers: 1,
+    minLowercase: 1,
+    minUppercase: 1,
+    minSymbols: 1,
+  });
 
-    if (newPassword !== confirmPassword) {
-      return res.status(400).json({ message: 'Password and confirmation password did not match' });
-    }
-    const userData = {
-      email: decodedToken.email,
-      id: decodedToken.userId,
-      newPassword: newPassword,
-      token : resetToken
-    }
-    const updatedPassword = await authService.updatePassword(userData);
+  if (!isValidPassword) {
+    return res
+      .status(400)
+      .json({ message: 'Password did not meet the minimum criteria' });
+  }
 
-    if (updatedPassword.success) {
-      return res.status(updatedPassword.code).json({ message: updatedPassword.message });
-    } else {
-      return res.status(updatedPassword.code).json({ error: updatedPassword.error });
-    }    
-}
+  if (newPassword !== confirmPassword) {
+    return res
+      .status(400)
+      .json({ message: 'Password and confirmation password did not match' });
+  }
 
-const authController = { registration, activateUser, loginUser, triggertResetPasswordLink,resetPassword };
+  const userData = {
+    email: decodedToken.email,
+    id: decodedToken.userId,
+    newPassword: newPassword,
+    token: resetToken,
+  };
+  const updatedPassword = await authService.updatePassword(userData);
+
+  if (updatedPassword.success) {
+    return res
+      .status(updatedPassword.code)
+      .json({ message: updatedPassword.message });
+  } else {
+    return res
+      .status(updatedPassword.code)
+      .json({ error: updatedPassword.error });
+  }
+};
+
+const authController = {
+  registration,
+  activateUser,
+  loginUser,
+  triggertResetPasswordLink,
+  resetPassword,
+};
 
 module.exports = authController;

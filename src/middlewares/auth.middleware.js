@@ -3,10 +3,13 @@ const secret = 'AXE-BXE-CXE';
 
 const generateJwtToken = (email, userId = 0, validity = 1) => {
   const expiresAt = new Date();
+
   expiresAt.setHours(expiresAt.getHours() + validity);
+
   const payload = { email, userId, expiresAt };
   const options = { expiresIn: `${validity}h` };
   const token = jwt.sign(payload, secret, options);
+
   return token;
 };
 
