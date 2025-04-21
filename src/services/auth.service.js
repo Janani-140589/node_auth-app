@@ -12,12 +12,6 @@ const isuserAlreadyExists = async (email) => {
 
 const registerNewUser = async (user) => {
   try {
-    User.beforeCreate(async (hashUser) => {
-      return bcrypt.hash(hashUser.password, 10).then((hash) => {
-        hashUser.password = hash;
-      });
-    });
-
     const newuser = await User.create({
       name: user.name,
       email: user.email,
@@ -98,7 +92,7 @@ const triggerResetPassword = async (userData) => {
     };
   }
 
-  const resetLink = `http:/localhost:5700/auth/reset/${userData.token}`;
+  const resetLink = `http://localhost:5700/auth/reset/${userData.token}`;
 
   const mailContent = {
     from: 'tech.rj.1405@gmail.com',
@@ -156,7 +150,8 @@ const updatePassword = async (userData) => {
     return {
       success: true,
       code: 200,
-      message: 'Password Reset Successful ' + updatedUser[0],
+      message: 'Password Reset Successful ',
+      user: updatedUser[0],
     };
   } else {
     return {

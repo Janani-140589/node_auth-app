@@ -13,7 +13,7 @@ const createTransporter = async () => {
 const sendActivationEmail = async (email, activationToken) => {
   const transporter = await createTransporter();
 
-  const activationLink = `http:/localhost:5700/auth/activate/${activationToken}`;
+  const activationLink = `http://localhost:5700/auth/activate/${activationToken}`;
 
   const mailContent = {
     from: 'tech.rj.1405@gmail.com',

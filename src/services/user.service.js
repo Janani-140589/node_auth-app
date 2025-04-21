@@ -71,14 +71,14 @@ const updatePassword = async (userData) => {
   );
 
   if (!validateOldPassword) {
-    return { success: false, code: 401, message: 'Invalid credetials' };
+    return { success: false, code: 401, message: 'Invalid credentials' };
   }
 
   if (userData.oldPassword === userData.newPassword) {
     return {
       success: false,
       code: 404,
-      message: 'Old and New passoword cannot be same',
+      message: 'Old and New password cannot be same',
     };
   }
 

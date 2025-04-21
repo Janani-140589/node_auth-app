@@ -7,7 +7,7 @@ const registration = async (req, res) => {
 
   // check of empty values
   if (!name || !email || !password) {
-    res.status(400).json({ message: 'Name/ email/ password is empty' });
+    return res.status(400).json({ message: 'Name/ email/ password is empty' });
   }
 
   // check if email is Valid
@@ -31,9 +31,9 @@ const registration = async (req, res) => {
   }
 
   // Check if user already exists
-  const isExistingUser = await authService.isuserAlreadyExists(email);
+  const user = await authService.isuserAlreadyExists(email);
 
-  if (isExistingUser) {
+  if (user) {
     return res.status(400).json({ message: 'User Already Exists' });
   }
 
@@ -50,7 +50,7 @@ const registration = async (req, res) => {
   const newUser = await authService.registerNewUser(registerUser);
 
   if (!newUser) {
-    return res.status(404).json('Unable to register user');
+    return res.status(500).json('Unable to register user');
   }
 
   // Send Email for activation
@@ -67,19 +67,20 @@ const activateUser = async (req, res) => {
   if (decoded.email) {
     const checkUser = await authService.isuserAlreadyExists(decoded.email);
 
-    if (checkUser.isactive) {
-      return res.status(200).json('User already active');
+    if (checkUser && checkUser.isactive) {
+      return res.status(200).json({ message: 'User already active' });
     } else {
       const activated = await authService.activateUser(checkUser.email);
 
       if (!activated) {
-        return res.status(404).json('Unable to activate user');
+        return res.status(404).json({ message: 'Unable to activate user' });
       }
     }
   } else {
-    return res.status(404).json('Link not valid');
+    return res.status(404).json({ message: 'Link not valid' });
   }
-  res.status(200).json({ message: 'Account activated successfully' });
+
+  return res.status(200).json({ message: 'Account activated successfully' });
 };
 
 const loginUser = async (req, res) => {

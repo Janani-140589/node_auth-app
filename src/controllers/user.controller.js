@@ -13,7 +13,7 @@ const nameChange = async (req, res) => {
   const id = Number(req.user.userId);
 
   if (!name) {
-    res.status(401).json({ message: 'Name is empty' });
+    return res.status(401).json({ message: 'Name is empty' });
   }
 
   const updatedUser = await userService.updateName({ id, name, email });
@@ -46,10 +46,10 @@ const changeEmail = async (req, res) => {
   });
 
   if (updatedEmail.success) {
-    return res.status(200).json(updatedEmail.message);
+    return res.status(200).json({ message: updatedEmail.message });
   }
 
-  return res.status(404).json(updatedEmail.message);
+  return res.status(404).json({ message: updatedEmail.message });
 };
 
 const changePassword = async (req, res) => {

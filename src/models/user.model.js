@@ -1,5 +1,6 @@
 const { DataTypes } = require('sequelize');
 const { sequelize } = require('../config/db');
+const bcrypt = require('bcryptjs');
 
 const User = sequelize.define('User', {
   id: {
@@ -26,6 +27,12 @@ const User = sequelize.define('User', {
   activation_token: {
     type: DataTypes.TEXT,
   },
+});
+
+User.beforeCreate(async (hashUser) => {
+  return bcrypt.hash(hashUser.password, 10).then((hash) => {
+    hashUser.password = hash;
+  });
 });
 
 module.exports = User;
